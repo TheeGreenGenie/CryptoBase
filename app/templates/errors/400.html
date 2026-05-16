@@ -1,0 +1,10 @@
+{% extends "base.html" %}
+
+{% block title %}Request Error · CryptoBase{% endblock %}
+
+{% block content %}
+<section class="panel">
+  <h1>Request error</h1>
+  <p class="muted">{{ error.description if error and error.description else "The request could not be completed." }}</p>
+</section>
+{% endblock %}

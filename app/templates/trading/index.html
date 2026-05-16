@@ -1,0 +1,154 @@
+{% extends "base.html" %}
+
+{% block title %}Trading · CryptoBase{% endblock %}
+
+{% block content %}
+<section class="page-header">
+  <div>
+    <p class="eyebrow">Swap tokens instantly</p>
+    <h1>Trading</h1>
+  </div>
+</section>
+
+<div class="swap-layout">
+
+  <!-- ── Swap card ─────────────────────────────────── -->
+  <section class="panel swap-card">
+
+    <!-- You pay -->
+    <div class="swap-field">
+      <label class="swap-field-label">You pay</label>
+      <div class="swap-field-row">
+        <input
+          id="amount-in"
+          class="swap-amount-input"
+          inputmode="decimal"
+          placeholder="0.00"
+          autocomplete="off"
+        >
+        <select id="token-in" class="swap-token-select">
+          <option value="ETH">ETH</option>
+          <option value="mWETH">mWETH</option>
+          <option value="mUSDC">mUSDC</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- Flip button -->
+    <div class="swap-flip-row">
+      <button class="swap-flip-btn" id="swap-flip" type="button" title="Flip tokens">⇅</button>
+      <span id="swap-rate" class="swap-rate-label"></span>
+    </div>
+
+    <!-- You receive -->
+    <div class="swap-field">
+      <label class="swap-field-label">You receive</label>
+      <div class="swap-field-row">
+        <span id="amount-out" class="swap-amount-output">—</span>
+        <select id="token-out" class="swap-token-select">
+          <option value="mUSDC">mUSDC</option>
+          <option value="mWETH">mWETH</option>
+          <option value="ETH">ETH</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- Slippage -->
+    <div class="swap-slippage-row">
+      <span class="swap-slippage-label">Slippage tolerance</span>
+      <div class="swap-slippage-chips">
+        <button class="slippage-chip" data-bps="10">0.1%</button>
+        <button class="slippage-chip active" data-bps="50">0.5%</button>
+        <button class="slippage-chip" data-bps="100">1%</button>
+      </div>
+    </div>
+
+    <!-- Quote result -->
+    <div id="quote-result" class="quote-result" hidden>
+      <div class="quote-result-row">
+        <span class="muted">You'll receive at least</span>
+        <strong id="quote-min-out">—</strong>
+      </div>
+      <div class="quote-result-row">
+        <span class="muted">Price impact</span>
+        <strong id="quote-impact">—</strong>
+      </div>
+    </div>
+
+    <button class="primary-button swap-btn" id="swap-btn" type="button" disabled>
+      Enter an amount
+    </button>
+
+  </section>
+
+  <!-- ── Info sidebar ───────────────────────────────── -->
+  <section class="panel swap-info">
+    <h2 style="margin-bottom:16px">How it works</h2>
+    <ol class="swap-steps">
+      <li>
+        <span class="step-num">1</span>
+        <div>
+          <strong>Pick tokens</strong>
+          <p class="muted">Choose what you're swapping from and to.</p>
+        </div>
+      </li>
+      <li>
+        <span class="step-num">2</span>
+        <div>
+          <strong>Enter an amount</strong>
+          <p class="muted">Type how much you want to swap — you'll instantly see what you'll get back.</p>
+        </div>
+      </li>
+      <li>
+        <span class="step-num">3</span>
+        <div>
+          <strong>Review &amp; swap</strong>
+          <p class="muted">Hit Swap and confirm in your wallet. That's it!</p>
+        </div>
+      </li>
+    </ol>
+    <div class="swap-info-note">
+      <strong>Slippage</strong> is how much the price can move before your swap is rejected. 0.5% is fine for most swaps.
+    </div>
+  </section>
+
+</div>
+
+<!-- ── Confirm overlay ───────────────────────────── -->
+<div class="tx-overlay" id="swap-overlay" hidden>
+  <div class="tx-overlay-inner swap-confirm-inner">
+    <h3 style="margin:0 0 20px;font-size:20px">Confirm Swap</h3>
+
+    <div class="swap-confirm-summary">
+      <div class="swap-confirm-row">
+        <span class="muted">You pay</span>
+        <strong id="confirm-pay">—</strong>
+      </div>
+      <div class="swap-confirm-arrow">↓</div>
+      <div class="swap-confirm-row">
+        <span class="muted">You receive (est.)</span>
+        <strong id="confirm-receive">—</strong>
+      </div>
+      <div class="swap-confirm-row" style="margin-top:12px;padding-top:12px;border-top:1px solid var(--line)">
+        <span class="muted">Minimum received</span>
+        <span id="confirm-min">—</span>
+      </div>
+      <div class="swap-confirm-row">
+        <span class="muted">Slippage tolerance</span>
+        <span id="confirm-slippage">—</span>
+      </div>
+    </div>
+
+    <p class="muted" style="font-size:13px;margin:16px 0 0">
+      Your wallet will prompt you to sign and broadcast this transaction.
+    </p>
+
+    <div class="tx-overlay-actions">
+      <button class="secondary-button" type="button" id="swap-cancel">Cancel</button>
+      <button class="primary-button" type="button" id="swap-confirm">Confirm swap</button>
+    </div>
+  </div>
+</div>
+
+<script src="{{ url_for('static', filename='js/trading.js') }}" defer></script>
+{% endblock %}

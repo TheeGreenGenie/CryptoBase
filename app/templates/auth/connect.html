@@ -1,0 +1,66 @@
+{% extends "auth/auth_base.html" %}
+
+{% block title %}Sign In · CryptoBase{% endblock %}
+
+{% block content %}
+<div class="auth-card">
+  <div class="auth-tabs">
+    <button class="auth-tab active" type="button" data-tab="login">Log In</button>
+    <button class="auth-tab" type="button" data-tab="signup">Sign Up</button>
+  </div>
+
+  <!-- Log In panel -->
+  <div class="auth-tab-panel active" id="panel-login">
+    <h2>Welcome back</h2>
+    <span class="auth-sub">Connect your wallet to sign in. Your signature verifies your identity — no password needed.</span>
+    <div class="auth-action-form">
+      <button class="metamask-button" type="button" data-wallet-connect data-mode="login">
+        <span>🦊</span> Connect MetaMask
+      </button>
+    </div>
+    <p class="auth-footer">
+      New here? <button type="button" data-switch-tab="signup">Create an account</button>
+    </p>
+  </div>
+
+  <!-- Sign Up panel -->
+  <div class="auth-tab-panel" id="panel-signup">
+    <h2>Create your account</h2>
+    <span class="auth-sub">Connect your wallet once to register. Your wallet address is your account — no username or password required.</span>
+    <div class="auth-action-form">
+      <label>Email address <em style="font-style:normal;color:var(--muted)">(optional)</em>
+        <input type="email" id="signup-email" placeholder="you@example.com" autocomplete="email">
+      </label>
+      <button class="metamask-button" type="button" data-wallet-connect data-mode="signup">
+        <span>🦊</span> Connect MetaMask &amp; Sign Up
+      </button>
+      <p class="muted" style="font-size:12px;margin:0">
+        Connecting for the first time automatically creates your account. Returning users are signed in instantly.
+      </p>
+    </div>
+    <p class="auth-footer">
+      Already have an account? <button type="button" data-switch-tab="login">Log in instead</button>
+    </p>
+  </div>
+</div>
+
+<script>
+  // Tab switching
+  document.querySelectorAll(".auth-tab").forEach(btn => {
+    btn.addEventListener("click", () => activateTab(btn.dataset.tab));
+  });
+  document.querySelectorAll("[data-switch-tab]").forEach(btn => {
+    btn.addEventListener("click", () => activateTab(btn.dataset.switchTab));
+  });
+
+  function activateTab(name) {
+    document.querySelectorAll(".auth-tab").forEach(t => t.classList.toggle("active", t.dataset.tab === name));
+    document.querySelectorAll(".auth-tab-panel").forEach(p => p.classList.toggle("active", p.id === `panel-${name}`));
+  }
+
+  // Wallet status messages shown inside this page
+  document.addEventListener("walletStatus", (event) => {
+    showAlert(event.detail.message, event.detail.type || "error");
+  });
+</script>
+{% endblock %}

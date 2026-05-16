@@ -1,0 +1,103 @@
+{% extends "base.html" %}
+
+{% block title %}Lending · CryptoBase{% endblock %}
+
+{% block content %}
+<section class="page-header">
+  <div>
+    <p class="eyebrow">Collateral and borrowing</p>
+    <h1>Lending</h1>
+  </div>
+</section>
+
+<section class="panel">
+  <h2>
+    Your position
+    <span class="spinner htmx-indicator" style="margin-left:8px" id="position-spinner"></span>
+  </h2>
+  <div
+    id="lending-position-panel"
+    hx-get="{{ url_for('lending.positions_partial') }}"
+    hx-trigger="load, every 10s, refresh from:body"
+    hx-swap="innerHTML"
+    hx-indicator="#position-spinner"
+  >
+    {% include "lending/_position_table.html" %}
+  </div>
+</section>
+
+<section class="lending-grid">
+  <form class="panel action-form" data-lending-action="supply">
+    <h2>Supply Collateral</h2>
+    <label>Asset
+      <select name="token" class="asset-select">
+        {% for token in collateral_tokens %}
+        <option value="{{ token.address }}">{{ token.symbol }} — {{ token.name }}</option>
+        {% endfor %}
+      </select>
+    </label>
+    <label>Amount
+      <input name="amount" inputmode="decimal" placeholder="0.0" required>
+    </label>
+    <button class="primary-button" type="submit">Build supply tx</button>
+  </form>
+
+  <form class="panel action-form" data-lending-action="borrow">
+    <h2>Borrow</h2>
+    <label>Asset
+      <select name="token" class="asset-select">
+        <option value="debt">mUSDC — Mock USD Coin</option>
+      </select>
+    </label>
+    <label>Amount
+      <input name="amount" inputmode="decimal" placeholder="0.0" required>
+    </label>
+    <button class="primary-button" type="submit">Build borrow tx</button>
+  </form>
+
+  <form class="panel action-form" data-lending-action="repay">
+    <h2>Repay</h2>
+    <label>Asset
+      <select name="token" class="asset-select">
+        <option value="debt">mUSDC — Mock USD Coin</option>
+      </select>
+    </label>
+    <label>Amount
+      <input name="amount" inputmode="decimal" placeholder="0.0" required>
+    </label>
+    <button class="primary-button" type="submit">Build repay tx</button>
+  </form>
+
+  <form class="panel action-form" data-lending-action="withdraw">
+    <h2>Withdraw Collateral</h2>
+    <label>Asset
+      <select name="token" class="asset-select">
+        {% for token in collateral_tokens %}
+        <option value="{{ token.address }}">{{ token.symbol }} — {{ token.name }}</option>
+        {% endfor %}
+      </select>
+    </label>
+    <label>Amount
+      <input name="amount" inputmode="decimal" placeholder="0.0" required>
+    </label>
+    <button class="primary-button" type="submit">Build withdraw tx</button>
+  </form>
+</section>
+
+<!-- Transaction preview overlay -->
+<div class="tx-overlay" id="tx-overlay" hidden>
+  <div class="tx-overlay-inner">
+    <h3>Transaction preview</h3>
+    <p class="muted" style="font-size:13px;margin:0 0 10px">
+      Review the unsigned transaction payload below. Your wallet will prompt you to sign and broadcast it.
+    </p>
+    <pre id="tx-overlay-code" class="tx-preview" style="max-height:300px;overflow:auto"></pre>
+    <div class="tx-overlay-actions">
+      <button class="secondary-button" type="button" id="tx-cancel">Cancel</button>
+      <button class="primary-button" type="button" id="tx-confirm">Send with wallet</button>
+    </div>
+  </div>
+</div>
+
+<script src="{{ url_for('static', filename='js/lending.js') }}" defer></script>
+{% endblock %}

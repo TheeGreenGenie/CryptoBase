@@ -1,0 +1,19 @@
+[tool.ruff]
+line-length = 120
+exclude = [
+  ".MidnightVenv",
+  ".venv",
+  "contracts/out",
+  "contracts/cache",
+]
+
+[tool.black]
+line-length = 120
+exclude = '''
+/(
+  \.MidnightVenv
+  | \.venv
+  | contracts/out
+  | contracts/cache
+)/
+'''

@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard · CryptoBase{% endblock %}
+
+{% block content %}
+<section class="page-header">
+  <div>
+    <p class="eyebrow">Testnet operations</p>
+    <h1>Dashboard</h1>
+  </div>
+  <span class="status-pill">
+    <span class="spinner htmx-indicator" id="dash-spinner"></span>
+    Local · Anvil
+  </span>
+</section>
+
+<section
+  id="metrics-grid"
+  class="metrics-grid"
+  hx-get="{{ url_for('dashboard.metrics_partial') }}"
+  hx-trigger="load, every 10s, refresh from:body"
+  hx-swap="innerHTML"
+>
+  <article class="metric"><span>Collateral</span><strong>$0.00</strong></article>
+  <article class="metric"><span>Debt</span><strong>$0.00</strong></article>
+  <article class="metric"><span>Health factor</span><strong>--</strong></article>
+</section>
+
+<section class="panel" style="margin-top: 16px;">
+  <h2>
+    Risk summary
+    <span class="spinner htmx-indicator" style="margin-left:8px"></span>
+  </h2>
+  <div
+    hx-get="{{ url_for('dashboard.risk_partial') }}"
+    hx-trigger="load, every 30s"
+    hx-swap="innerHTML"
+    hx-indicator="#dash-spinner"
+  >
+    {% include "partials/_risk_summary.html" %}
+  </div>
+</section>
+
+<section class="panel" style="margin-top: 16px;">
+  <h2>
+    Live lending position
+    <span class="spinner htmx-indicator" style="margin-left:8px"></span>
+  </h2>
+  <div
+    id="dash-position-panel"
+    hx-get="{{ url_for('lending.positions_partial') }}"
+    hx-trigger="load, every 10s, refresh from:body"
+    hx-swap="innerHTML"
+    hx-indicator="#dash-spinner"
+  >
+    {% include "lending/_position_table.html" %}
+  </div>
+</section>
+{% endblock %}

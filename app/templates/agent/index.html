@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+
+{% block title %}Agent · CryptoBase{% endblock %}
+
+{% block content %}
+<section class="page-header">
+  <div>
+    <p class="eyebrow">Human-approved suggestions</p>
+    <h1>Agent</h1>
+  </div>
+</section>
+
+<section class="panel">
+  <form class="action-form" id="agent-preferences">
+    <label>Risk tolerance
+      <select name="risk_tolerance">
+        {% for option in ["conservative", "moderate", "aggressive"] %}
+          <option value="{{ option }}" {% if user.risk_tolerance == option %}selected{% endif %}>{{ option }}</option>
+        {% endfor %}
+      </select>
+    </label>
+    <label>Max exposure USD <input name="max_exposure_usd" inputmode="decimal" value="{{ user.max_exposure_usd or '' }}"></label>
+    <button class="primary-button" type="submit">Save preferences</button>
+  </form>
+</section>
+
+<section class="panel">
+  <h2>Suggestions</h2>
+  <button class="primary-button" type="button" id="generate-suggestions">Generate suggestions</button>
+  <div
+    id="suggestions-list"
+    hx-get="{{ url_for('agent.suggestions_partial') }}"
+    hx-trigger="refresh from:body"
+    hx-swap="innerHTML"
+  >
+    {% include "agent/_suggestions.html" %}
+  </div>
+</section>
+
+<script src="{{ url_for('static', filename='js/agent.js') }}" defer></script>
+{% endblock %}

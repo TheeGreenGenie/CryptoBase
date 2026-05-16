@@ -1,0 +1,37 @@
+{% if summary %}
+  <div class="position-table">
+    <div>
+      <span>Collateral USD</span>
+      <strong>${{ summary.collateral_usd }}</strong>
+    </div>
+    <div>
+      <span>Debt USD</span>
+      <strong>${{ summary.debt_usd }}</strong>
+    </div>
+    <div>
+      <span>Health factor</span>
+      {% set hf_str = summary.health_factor %}
+      {% if hf_str == '--' %}
+        <strong class="muted">--</strong>
+      {% else %}
+        {% set hf = hf_str | float %}
+        {% set pct = ([[(hf - 1.0) / 0.6 * 100, 0] | max, 100] | min) | round | int %}
+        {% set hue = (pct * 120 / 100) | round | int %}
+        <strong style="color: hsl({{ hue }}, 78%, 38%)">{{ pct }}%</strong>
+      {% endif %}
+    </div>
+  </div>
+  {% if summary.risk_class in ['danger', 'liquidatable'] %}
+    <div class="alert alert-error" style="margin-top:12px">
+      Warning: position is at risk of liquidation. Consider repaying debt or adding collateral.
+    </div>
+  {% elif summary.risk_class == 'watch' %}
+    <div class="alert alert-warning" style="margin-top:12px">
+      Health factor is below comfortable levels. Monitor closely.
+    </div>
+  {% endif %}
+{% else %}
+  <div class="empty-state">
+    <p class="muted">Connect a wallet and supply collateral to see your risk summary.</p>
+  </div>
+{% endif %}

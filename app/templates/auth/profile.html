@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+
+{% block title %}Account · CryptoBase{% endblock %}
+
+{% block content %}
+<section class="page-header">
+  <div>
+    <p class="eyebrow">Wallet identity</p>
+    <h1>Account</h1>
+  </div>
+</section>
+
+<section class="panel" style="max-width:560px">
+  <h2>Connected wallet</h2>
+  <div style="display:flex;align-items:center;gap:12px;margin-top:8px">
+    <code id="wallet-addr" style="font-size:13px;word-break:break-all">{{ user.wallet_address }}</code>
+    <button type="button" class="secondary-button" onclick="copyAddress()" style="white-space:nowrap;flex-shrink:0">Copy</button>
+  </div>
+  <p class="muted" style="font-size:13px;margin-top:8px">
+    Joined {{ user.created_at.strftime('%Y-%m-%d') }}
+    {% if user.last_login_at %} · Last login {{ user.last_login_at.strftime('%Y-%m-%d %H:%M') }} UTC{% endif %}
+  </p>
+</section>
+
+<section class="panel" style="max-width:560px;margin-top:16px">
+  <h2>Profile</h2>
+  <form class="action-form" id="profile-form">
+    <label>Email (optional)
+      <input type="email" name="email" value="{{ user.email or '' }}" placeholder="you@example.com">
+    </label>
+    <button class="primary-button" type="submit">Save</button>
+  </form>
+</section>
+
+<section class="panel" style="max-width:560px;margin-top:16px">
+  <h2>Session</h2>
+  <p class="muted" style="font-size:14px;margin-bottom:12px">
+    Your session persists for 30 days. Switching accounts in MetaMask will automatically sign you out.
+  </p>
+  <button class="secondary-button" type="button" id="wallet-logout">Sign out</button>
+</section>
+
+<script>
+function copyAddress() {
+  const addr = document.getElementById("wallet-addr").textContent;
+  navigator.clipboard.writeText(addr).then(() => showAlert("Address copied", "success"));
+}
+
+document.getElementById("profile-form").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const email = e.target.email.value.trim() || null;
+  const resp = await fetch("/auth/profile", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ email }),
+  });
+  const payload = await resp.json();
+  if (payload.ok) {
+    showAlert("Profile saved", "success");
+  } else {
+    showAlert(payload.error?.message || "Save failed", "error");
+  }
+});
+</script>
+{% endblock %}

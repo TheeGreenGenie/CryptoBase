@@ -1,0 +1,29 @@
+{% set visible = suggestions | selectattr("status", "ne", "rejected") | list %}
+{% if visible %}
+  <div class="suggestion-list">
+    {% for s in visible %}
+      <article class="suggestion" id="suggestion-{{ s.id }}">
+        <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px">
+          <h3>{{ s.title }}</h3>
+          <span class="status-badge status-{{ s.status }}">{{ s.status }}</span>
+        </div>
+        <p class="muted" style="font-size:14px;margin:4px 0 0">{{ s.rationale }}</p>
+        <p class="suggestion-meta">
+          Risk: <strong>{{ s.risk_level }}</strong> &middot;
+          Source: {{ s.source }}
+        </p>
+        {% if s.status == 'pending' %}
+          <div class="suggestion-actions">
+            <button class="approve-button" data-suggestion-id="{{ s.id }}" data-action="approve">Approve</button>
+            <button class="reject-button" data-suggestion-id="{{ s.id }}" data-action="reject">Reject</button>
+          </div>
+        {% endif %}
+      </article>
+    {% endfor %}
+  </div>
+{% else %}
+  <div class="empty-state">
+    <p class="muted">No suggestions yet. Click Generate to run the rule engine.</p>
+  </div>
+{% endif %}
+

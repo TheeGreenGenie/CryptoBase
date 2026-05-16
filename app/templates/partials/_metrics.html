@@ -1,0 +1,19 @@
+<article class="metric">
+  <span>Collateral</span>
+  <strong>${{ collateral_usd }}</strong>
+</article>
+<article class="metric">
+  <span>Debt</span>
+  <strong>${{ debt_usd }}</strong>
+</article>
+<article class="metric">
+  <span>Health factor</span>
+  {% if health_factor == '--' %}
+    <strong class="muted">--</strong>
+  {% else %}
+    {% set hf = health_factor | float %}
+    {% set pct = ([[(hf - 1.0) / 0.6 * 100, 0] | max, 100] | min) | round | int %}
+    {% set hue = (pct * 120 / 100) | round | int %}
+    <strong style="color: hsl({{ hue }}, 78%, 38%)">{{ pct }}%</strong>
+  {% endif %}
+</article>

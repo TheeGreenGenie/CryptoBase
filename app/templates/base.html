@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{% block title %}CryptoBase{% endblock %}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/app.css') }}">
+    <script src="https://unpkg.com/htmx.org@1.9.12" defer></script>
+    <script src="{{ url_for('static', filename='js/wallet.js') }}" defer></script>
+    {% block head %}{% endblock %}
+  </head>
+  <body>
+    <div id="htmx-progress"></div>
+
+    <header class="topbar">
+      <a class="brand" href="{{ url_for('dashboard.index') }}">CryptoBase</a>
+      <nav class="nav">
+        <a href="{{ url_for('dashboard.index') }}">Dashboard</a>
+        <a href="{{ url_for('lending.index') }}">Lending</a>
+        <a href="{{ url_for('trading.index') }}">Trading</a>
+        <a href="{{ url_for('agent.index') }}">Agent</a>
+        <a href="/api/v1/health" target="_blank" rel="noopener">API</a>
+      </nav>
+      {% if session.get('wallet_address') %}
+        <a class="wallet-link" href="{{ url_for('auth.profile') }}" id="wallet-status">
+          {{ session['wallet_address'][:6] }}…{{ session['wallet_address'][-4:] }}
+        </a>
+        <button class="wallet-link logout-btn" type="button" id="wallet-logout" style="margin-left:8px;background:none;border:none;cursor:pointer;font:inherit;color:inherit;">
+          Logout
+        </button>
+      {% else %}
+        <a class="wallet-link" href="{{ url_for('auth.connect') }}" id="wallet-status">
+          Connect
+        </a>
+      {% endif %}
+    </header>
+
+    <main class="page">
+      <div id="alerts" class="alerts" aria-live="polite"></div>
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% for category, message in messages %}
+          <div class="alert alert-{{ category }}">{{ message }}</div>
+        {% endfor %}
+      {% endwith %}
+      {% block content %}{% endblock %}
+    </main>
+
+    <script>
+      // Show HTMX progress bar
+      document.addEventListener("htmx:beforeRequest", () => {
+        document.getElementById("htmx-progress").style.width = "60%";
+      });
+      document.addEventListener("htmx:afterRequest", () => {
+        const bar = document.getElementById("htmx-progress");
+        bar.style.width = "100%";
+        setTimeout(() => { bar.style.width = "0"; }, 300);
+      });
+
+      // Helper: show inline alert
+      function showAlert(message, type = "error") {
+        const area = document.getElementById("alerts");
+        const el = document.createElement("div");
+        el.className = `alert alert-${type}`;
+        el.textContent = message;
+        area.appendChild(el);
+        setTimeout(() => el.remove(), 5000);
+      }
+    </script>
+  </body>
+</html>

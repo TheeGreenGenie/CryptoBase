@@ -1,0 +1,47 @@
+{% if error %}
+  <div class="alert alert-error">Position sync unavailable: {{ error }}</div>
+{% elif position %}
+  {% set has_collateral = position.collateral_positions | length > 0 %}
+  {% set has_debt = position.debt_tokens is not none %}
+
+  {% if not has_collateral and not has_debt %}
+    <div class="empty-state">
+      <p class="muted">No open positions. Supply collateral to get started.</p>
+    </div>
+  {% else %}
+    <div class="position-table">
+      {% for col in position.collateral_positions %}
+      <div>
+        <span>Collateral ({{ col.symbol }})</span>
+        <strong>{{ col.amount }} {{ col.symbol }} <span class="muted">(~${{ position.collateral_usd }})</span></strong>
+      </div>
+      {% endfor %}
+
+      {% if has_debt %}
+      <div>
+        <span>Debt ({{ position.debt_symbol }})</span>
+        <strong>{{ position.debt_tokens }} {{ position.debt_symbol }} <span class="muted">(~${{ position.debt_usd }})</span></strong>
+      </div>
+      {% endif %}
+
+      {% if has_collateral or has_debt %}
+      <div>
+        <span>Health factor</span>
+        {% set hf_raw = position.health_factor_raw | int %}
+        {% if hf_raw == 0 or not has_debt %}
+          <strong style="color: hsl(120, 78%, 38%)">100%</strong>
+        {% else %}
+          {% set hf = hf_raw / 1e18 %}
+          {% set pct = ([[(hf - 1.0) / 0.6 * 100, 0] | max, 100] | min) | round | int %}
+          {% set hue = (pct * 120 / 100) | round | int %}
+          <strong style="color: hsl({{ hue }}, 78%, 38%)">{{ pct }}%</strong>
+        {% endif %}
+      </div>
+      {% endif %}
+    </div>
+  {% endif %}
+{% else %}
+  <div class="empty-state">
+    <p class="muted">No positions synced yet. Supply collateral to get started.</p>
+  </div>
+{% endif %}
