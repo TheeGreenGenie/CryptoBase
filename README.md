@@ -1,5 +1,7 @@
 # CryptoBase
 
+📊 **[Slide Deck](./CryptoBase.pdf)** — Project overview and feature walkthrough (PDF)
+
 Flask + HTMX + Web3 MVP for testnet lending, trading, risk monitoring, and human-approved agent suggestions.
 
 ## Prerequisites
