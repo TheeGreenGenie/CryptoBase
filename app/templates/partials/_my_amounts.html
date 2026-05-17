@@ -1,0 +1,29 @@
+{% if position %}
+  <div class="position-table" style="margin-top:8px">
+    <div>
+      <span>Collateral</span>
+      <strong>${{ position.collateral_usd }}</strong>
+    </div>
+    <div>
+      <span>Debt</span>
+      <strong>${{ position.debt_usd }}</strong>
+    </div>
+    {% if position.debt_tokens %}
+    <div>
+      <span>Debt (tokens)</span>
+      <strong>{{ position.debt_tokens }} {{ position.debt_symbol }}</strong>
+    </div>
+    {% endif %}
+    {% for col in position.collateral_positions %}
+    <div>
+      <span>Collateral ({{ col.symbol }})</span>
+      <strong>{{ col.amount }} {{ col.symbol }}</strong>
+    </div>
+    {% endfor %}
+  </div>
+  <p style="font-size:0.75rem;color:var(--muted,#888);margin:8px 0 0">
+    These amounts are only visible to you. They are not stored on the public ledger.
+  </p>
+{% else %}
+  <p class="muted" style="margin:8px 0 0">No position data available — deploy contracts and supply collateral first.</p>
+{% endif %}

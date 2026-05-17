@@ -2,22 +2,23 @@
   <div class="position-table">
     <div>
       <span>Collateral USD</span>
-      <strong>${{ summary.collateral_usd }}</strong>
+      <strong class="muted" data-reveal="collateral_usd">Shielded</strong>
     </div>
     <div>
       <span>Debt USD</span>
-      <strong>${{ summary.debt_usd }}</strong>
+      <strong class="muted" data-reveal="debt_usd">Shielded</strong>
     </div>
     <div>
-      <span>Health factor</span>
-      {% set hf_str = summary.health_factor %}
-      {% if hf_str == '--' %}
-        <strong class="muted">--</strong>
+      <span>Risk class</span>
+      {% set rc = summary.risk_class %}
+      {% if rc == 'healthy' %}
+        <strong style="color:#16a34a">Healthy</strong>
+      {% elif rc == 'watch' %}
+        <strong style="color:#ca8a04">Watch</strong>
+      {% elif rc == 'danger' %}
+        <strong style="color:#ea580c">Danger</strong>
       {% else %}
-        {% set hf = hf_str | float %}
-        {% set pct = ([[(hf - 1.0) / 0.6 * 100, 0] | max, 100] | min) | round | int %}
-        {% set hue = (pct * 120 / 100) | round | int %}
-        <strong style="color: hsl({{ hue }}, 78%, 38%)">{{ pct }}%</strong>
+        <strong style="color:#dc2626">Liquidatable</strong>
       {% endif %}
     </div>
   </div>
@@ -30,6 +31,10 @@
       Health factor is below comfortable levels. Monitor closely.
     </div>
   {% endif %}
+  <p style="font-size:0.75rem;color:var(--muted,#888);margin:10px 0 0">
+    Exact amounts are hidden by the Midnight zero-knowledge privacy layer.
+    <a href="{{ url_for('midnight.index') }}" style="color:inherit">View proof →</a>
+  </p>
 {% else %}
   <div class="empty-state">
     <p class="muted">Connect a wallet and supply collateral to see your risk summary.</p>

@@ -1,0 +1,159 @@
+{% extends "base.html" %}
+
+{% block title %}Privacy Shield · CryptoBase{% endblock %}
+
+{% block content %}
+<section class="page-header">
+  <div>
+    <p class="eyebrow">Zero-knowledge attestation</p>
+    <h1>Privacy Shield</h1>
+  </div>
+  <span class="status-pill">
+    {% if attestation.mode == "midnight" %}
+      Midnight Testnet
+    {% else %}
+      Local Demo
+    {% endif %}
+  </span>
+</section>
+
+<section class="panel">
+  <h2>What this does</h2>
+  <p style="color:var(--muted,#888);line-height:1.6;margin:0">
+    Your collateral and debt amounts are <strong>never stored on the public ledger</strong>.
+    Instead, cryptographic commitments (SHA-256 hashes) are recorded on the
+    <strong>Midnight network</strong> as private state — visible only to you.
+    A zero-knowledge proof certifies that your position is overcollateralized
+    without revealing the actual values. Anyone can verify your health status
+    through the public attestation below.
+  </p>
+</section>
+
+<section class="panel">
+  <h2>Your attestation</h2>
+
+  <div class="position-table" style="margin-bottom:16px">
+    <div>
+      <span>Overcollateralized</span>
+      {% if attestation.is_overcollateralized %}
+        <strong style="color:#16a34a">Yes</strong>
+      {% else %}
+        <strong style="color:#dc2626">No</strong>
+      {% endif %}
+    </div>
+    <div>
+      <span>Risk class</span>
+      <strong
+        {% if attestation.risk_class == 'healthy' %}style="color:#16a34a"
+        {% elif attestation.risk_class == 'watch' %}style="color:#ca8a04"
+        {% elif attestation.risk_class == 'danger' %}style="color:#ea580c"
+        {% else %}style="color:#dc2626"
+        {% endif %}
+      >{{ attestation.risk_label }}</strong>
+    </div>
+    <div>
+      <span>Attestation mode</span>
+      <strong>{{ "Midnight Testnet" if attestation.mode == "midnight" else "Local Demo" }}</strong>
+    </div>
+  </div>
+
+  <div style="margin-bottom:12px">
+    <p style="font-size:0.8rem;color:var(--muted,#888);margin:0 0 4px">Collateral commitment</p>
+    <code style="display:block;word-break:break-all;font-size:0.75rem;padding:8px;background:var(--surface,#1a1a2e);border-radius:4px">
+      {{ attestation.collateral_commit }}
+    </code>
+  </div>
+
+  <div style="margin-bottom:12px">
+    <p style="font-size:0.8rem;color:var(--muted,#888);margin:0 0 4px">Debt commitment</p>
+    <code style="display:block;word-break:break-all;font-size:0.75rem;padding:8px;background:var(--surface,#1a1a2e);border-radius:4px">
+      {{ attestation.debt_commit }}
+    </code>
+  </div>
+
+  <div style="margin-bottom:20px">
+    <p style="font-size:0.8rem;color:var(--muted,#888);margin:0 0 4px">ZK proof hash</p>
+    <code style="display:block;word-break:break-all;font-size:0.75rem;padding:8px;background:var(--surface,#1a1a2e);border-radius:4px">
+      {{ attestation.proof_hash }}
+    </code>
+  </div>
+
+  <button
+    class="primary-button"
+    id="attest-btn"
+    hx-post="{{ url_for('midnight.attest') }}"
+    hx-swap="none"
+    hx-on::after-request="handleAttestResponse(event)"
+  >
+    Re-attest position
+  </button>
+
+  <p style="margin-top:10px;font-size:0.8rem;color:var(--muted,#888)">
+    Commitments update automatically each time you load this page.
+    Click <em>Re-attest</em> to push a fresh proof to the Midnight network.
+  </p>
+</section>
+
+<section class="panel">
+  <h2>Your private amounts</h2>
+  <p style="color:var(--muted,#888);font-size:0.875rem;margin:0 0 12px;line-height:1.6">
+    Only you can see this. These values are never stored on the public ledger or shown in the API.
+    They are fetched directly from the chain for your authenticated session only.
+  </p>
+  <button
+    class="primary-button"
+    hx-get="{{ url_for('midnight.my_amounts') }}"
+    hx-target="#my-amounts-panel"
+    hx-swap="innerHTML"
+    hx-indicator="#amounts-spinner"
+    style="background:var(--surface,#1a1a2e);border:1px solid var(--border,#333)"
+  >
+    Reveal my amounts
+    <span class="spinner htmx-indicator" id="amounts-spinner" style="margin-left:6px"></span>
+  </button>
+  <div id="my-amounts-panel" style="margin-top:8px"></div>
+</section>
+
+<section class="panel">
+  <h2>Public verifier link</h2>
+  <p style="color:var(--muted,#888);margin:0 0 10px;font-size:0.875rem">
+    Share this URL with anyone — they can verify your health status without seeing your amounts.
+  </p>
+  <code style="display:block;word-break:break-all;font-size:0.8rem;padding:8px;background:var(--surface,#1a1a2e);border-radius:4px">
+    {{ request.host_url.rstrip('/') }}{{ url_for('midnight.verify', wallet_address=wallet) }}
+  </code>
+  <a
+    class="primary-button"
+    href="{{ url_for('midnight.verify', wallet_address=wallet) }}"
+    target="_blank"
+    rel="noopener"
+    style="display:inline-block;margin-top:10px"
+  >
+    Open verifier
+  </a>
+</section>
+
+<section class="panel">
+  <h2>How the proof works</h2>
+  <div style="color:var(--muted,#888);font-size:0.875rem;line-height:1.7">
+    <p>1. <strong>Commitment</strong> — your collateral and debt amounts are hashed with a secret salt: <code>SHA-256(amount || salt)</code>. The amounts cannot be recovered from the hash.</p>
+    <p>2. <strong>Circuit</strong> — the <code>attest_health</code> circuit in <code>private_lending.compact</code> verifies <code>collateral × 10000 ≥ debt × 15000</code> (≥ 150% ratio) inside a zero-knowledge proof, without broadcasting the values.</p>
+    <p>3. <strong>Attestation</strong> — the Midnight network records only the proof hash, the overcollateralization result, and the risk class. No amounts on chain.</p>
+  </div>
+</section>
+
+<script>
+function handleAttestResponse(event) {
+  try {
+    const data = JSON.parse(event.detail.xhr.responseText);
+    if (data.ok) {
+      showAlert("Position re-attested successfully.", "success");
+    } else {
+      showAlert("Attestation failed: " + (data.error?.message || "unknown error"), "error");
+    }
+  } catch {
+    showAlert("Unexpected response from server.", "error");
+  }
+}
+</script>
+{% endblock %}

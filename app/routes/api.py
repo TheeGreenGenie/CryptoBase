@@ -5,6 +5,7 @@ from flask import Blueprint, g, jsonify, request, session
 from app.extensions import csrf, db, limiter
 from app.models import APIKey, Position, User
 from app.services import lending as lending_service
+from app.services import midnight_service
 from app.services.api_keys import generate_raw_api_key, hash_api_key, normalize_scopes, touch_api_key, verify_api_key
 from app.services.pricing import get_supported_assets
 from app.services.risk import portfolio_summary
@@ -52,18 +53,21 @@ def health():
 @limiter.limit("60/minute")
 @require_api_scope("read:positions")
 def positions():
+    user = User.query.get(g.api_key.user_id)
     rows = Position.query.filter_by(user_id=g.api_key.user_id).all()
+    attestation = midnight_service.get_public_attestation(user.wallet_address, g.api_key.user_id)
     return ok(
-        [
-            {
-                "asset_symbol": row.asset_symbol,
-                "position_type": row.position_type,
-                "amount_raw": row.amount_raw,
-                "amount_decimal": str(row.amount_decimal),
-                "usd_value": str(row.usd_value),
-            }
-            for row in rows
-        ]
+        {
+            "positions": [
+                {
+                    "asset_symbol": row.asset_symbol,
+                    "position_type": row.position_type,
+                    "privacy_note": "Amounts are hidden by the Midnight zero-knowledge privacy layer.",
+                }
+                for row in rows
+            ],
+            "midnight_attestation": attestation,
+        }
     )
 
 
@@ -71,7 +75,17 @@ def positions():
 @limiter.limit("60/minute")
 @require_api_scope("read:risk")
 def risk():
-    return ok(portfolio_summary(g.api_key.user_id))
+    user = User.query.get(g.api_key.user_id)
+    attestation = midnight_service.get_public_attestation(user.wallet_address, g.api_key.user_id)
+    summary = portfolio_summary(g.api_key.user_id)
+    return ok(
+        {
+            "risk_class": summary["risk_class"],
+            "active_loan_count": summary["active_loan_count"],
+            "midnight_attestation": attestation,
+            "privacy_note": "Collateral and debt amounts are hidden by the Midnight zero-knowledge privacy layer.",
+        }
+    )
 
 
 @api_bp.get("/yield-opportunities")

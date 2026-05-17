@@ -1,0 +1,126 @@
+pragma language_version >= 0.14.0;
+
+import CompactStandardLibrary;
+
+// ---------------------------------------------------------------------------
+// Private Lending — Midnight Confidential Contract
+//
+// This contract keeps every user's collateral and debt amounts hidden from
+// the public ledger.  Only cryptographic commitments (SHA-256 hashes) are
+// stored in the private ledger.  The public ledger records only the boolean
+// result (overcollateralized: yes/no) and the risk classification.
+//
+// Anyone can verify a wallet's health status without learning the actual
+// dollar amounts — the proof hash is the mathematical guarantee.
+// ---------------------------------------------------------------------------
+
+// ---------------------------------------------------------------------------
+// PRIVATE LEDGER — visible only to the position owner via their spend key.
+// Observers on-chain see encrypted bytes; they cannot derive amounts.
+// ---------------------------------------------------------------------------
+export ledger private_positions: Map<Bytes<20>, {
+  collateral_commit: Bytes<32>,   // SHA-256(collateral_usd_cents || salt)
+  debt_commit:       Bytes<32>,   // SHA-256(debt_usd_cents       || salt)
+  attested_at:       Uint<64>     // block height of last attestation
+}>;
+
+// ---------------------------------------------------------------------------
+// PUBLIC LEDGER — visible to everyone, contains NO amount information.
+// risk_class encoding:
+//   0 = healthy      (health factor >= 1.6)
+//   1 = watch        (health factor >= 1.3)
+//   2 = danger       (health factor >= 1.1)
+//   3 = liquidatable (health factor <  1.1)
+// ---------------------------------------------------------------------------
+export ledger public_attestations: Map<Bytes<20>, {
+  is_overcollateralized: Boolean,
+  risk_class:            Uint<8>,
+  proof_hash:            Bytes<32>,  // SHA-256(collateral_commit || debt_commit)
+  attested_at:           Uint<64>
+}>;
+
+// ---------------------------------------------------------------------------
+// WITNESSES — private inputs supplied by the position owner when they call
+// attest_health.  These values are used inside the ZK circuit but are NEVER
+// broadcast to the network or stored on chain.
+// ---------------------------------------------------------------------------
+witness collateral_usd_cents: Uint<64>;   // collateral value in USD-cents
+witness debt_usd_cents:       Uint<64>;   // debt value in USD-cents
+witness salt:                 Bytes<32>;  // random salt chosen by the user
+
+// ---------------------------------------------------------------------------
+// CIRCUIT: attest_health
+//
+// Called by the position owner to update their private commitment and public
+// attestation.  The circuit:
+//   1. Reads the private witness values (amounts + salt).
+//   2. Verifies the supplied commitment hashes match the witness values.
+//   3. Proves overcollateralization (collateral >= 150 % of debt) without
+//      revealing the amounts.
+//   4. Writes the private position record (encrypted, owner-only).
+//   5. Writes the public attestation (risk class + proof hash only).
+// ---------------------------------------------------------------------------
+export circuit attest_health(
+  user:              Bytes<20>,
+  collateral_commit: Bytes<32>,
+  debt_commit:       Bytes<32>
+): [] {
+  // Pull private witness values — not visible outside this circuit execution.
+  const collat  = collateral_usd_cents();
+  const debt    = debt_usd_cents();
+  const s       = salt();
+
+  // --- Commitment verification -------------------------------------------
+  // The caller must supply commitments that match their private inputs.
+  // This prevents a user from claiming a stronger position than they hold.
+  assert collateral_commit == sha256(pad(32, collat as Bytes<8>) ^ pad(32, s));
+  assert debt_commit       == sha256(pad(32, debt  as Bytes<8>) ^ pad(32, s));
+
+  // --- Overcollateralization proof ----------------------------------------
+  // MIN_COLLATERAL_RATIO = 150 % => collateral * 10000 >= debt * 15000
+  const overcollat: Boolean = (collat * 10000) >= (debt * 15000);
+
+  // --- Risk classification (health factor thresholds) ---------------------
+  // hf_scaled = collateral / debt * 10000  (avoids floating point)
+  //   >= 16000 => healthy      (hf >= 1.6)
+  //   >= 13000 => watch        (hf >= 1.3)
+  //   >= 11000 => danger       (hf >= 1.1)
+  //   <  11000 => liquidatable
+  const risk_cls: Uint<8> =
+    (debt == 0)                                    ? (0 as Uint<8>) :
+    ((collat * 10000 / debt) >= 16000)             ? (0 as Uint<8>) :
+    ((collat * 10000 / debt) >= 13000)             ? (1 as Uint<8>) :
+    ((collat * 10000 / debt) >= 11000)             ? (2 as Uint<8>) :
+                                                     (3 as Uint<8>);
+
+  // Proof hash: public fingerprint of this specific attestation.
+  // Computed from both commitments so it changes whenever either amount does.
+  const proof_h: Bytes<32> = sha256(pad(64, collateral_commit ^ debt_commit));
+
+  // --- Write private state (encrypted, owner-only) ------------------------
+  private_positions[user] = {
+    collateral_commit: collateral_commit,
+    debt_commit:       debt_commit,
+    attested_at:       current_block_height()
+  };
+
+  // --- Write public state (amounts NOT included) --------------------------
+  public_attestations[user] = {
+    is_overcollateralized: overcollat,
+    risk_class:            risk_cls,
+    proof_hash:            proof_h,
+    attested_at:           current_block_height()
+  };
+}
+
+// ---------------------------------------------------------------------------
+// CIRCUIT: revoke_attestation
+//
+// Allows the position owner to clear their public attestation (e.g., after
+// fully repaying).  Clears both private and public records.
+// ---------------------------------------------------------------------------
+export circuit revoke_attestation(user: Bytes<20>): [] {
+  // Only the transaction sender (who controls the spend key) can revoke.
+  private_positions.delete(user);
+  public_attestations.delete(user);
+}

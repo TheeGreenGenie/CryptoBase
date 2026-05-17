@@ -274,6 +274,55 @@ Invoke-RestMethod `
 
 **Safety note:** All transaction-building endpoints return **unsigned** payloads. User wallets must sign all user-fund transactions. The backend never holds private keys.
 
+## Midnight Privacy Layer
+
+CryptoBase uses the [Midnight network](https://midnight.network) to keep sensitive financial data — collateral amounts, debt amounts, and health factors — hidden from the public ledger while remaining mathematically verifiable.
+
+### How it works
+
+1. **Commitment** — when your position is attested, your collateral and debt USD values are hashed with a secret salt: `SHA-256(amount || salt)`. The raw amounts cannot be recovered from the hash.
+2. **Zero-knowledge circuit** — the `attest_health` circuit in `contracts/midnight/private_lending.compact` proves your position is overcollateralized (`collateral ≥ 150% of debt`) inside a ZK proof without broadcasting the values.
+3. **Public attestation** — the Midnight network records only the proof hash, the overcollateralization result (`yes/no`), and the risk class (`healthy/watch/danger/liquidatable`). No amounts on chain.
+
+### What's hidden
+
+| Data | Visibility |
+|---|---|
+| Collateral amount (USD) | Hidden — commitment hash only |
+| Debt amount (USD) | Hidden — commitment hash only |
+| Health factor (exact value) | Hidden — risk class only |
+| Risk class | Public (Healthy / Watch / Danger / Liquidatable) |
+| Overcollateralized | Public (Yes / No) |
+| ZK proof hash | Public (verifiable on Midnight chain) |
+
+### Pages
+
+| URL | Description |
+|---|---|
+| `/privacy` | Your privacy dashboard — attestation status, commitment hashes, proof hash |
+| `/privacy/attest` | Re-attest current position (POST, login required) |
+| `/privacy/verify/<wallet>` | Public verifier — shows risk class and proof hash for any wallet |
+
+### Modes
+
+- **Midnight Testnet** — set `MIDNIGHT_RPC_URL` to your Midnight node endpoint. Attestations are pushed on-chain.
+- **Local Demo** — leave `MIDNIGHT_RPC_URL` empty. Commitments are computed locally, attestations are derived in-memory. All privacy properties are demonstrated without a live Midnight node.
+
+### Configuration
+
+```env
+MIDNIGHT_RPC_URL=                 # Midnight node RPC endpoint (empty = local demo mode)
+MIDNIGHT_CONTRACT_ADDRESS=        # Deployed private_lending.compact address
+```
+
+### Compact contract
+
+The Midnight smart contract is at [`contracts/midnight/private_lending.compact`](contracts/midnight/private_lending.compact). It defines:
+- `private_positions` — private ledger (owner-only): commitment hashes per wallet
+- `public_attestations` — public ledger: risk class and proof hash per wallet
+- `attest_health` — ZK circuit that proves overcollateralization without revealing amounts
+- `revoke_attestation` — clears private and public records when a position is closed
+
 ## Troubleshooting
 
 | Symptom | Fix |

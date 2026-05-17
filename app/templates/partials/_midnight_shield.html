@@ -1,0 +1,50 @@
+{% if attestation %}
+  {% set rc = attestation.risk_class %}
+  <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+    <span style="font-size:1.5rem" aria-hidden="true">
+      {% if rc == 'healthy' %}🛡️
+      {% elif rc == 'watch' %}⚠️
+      {% elif rc == 'danger' %}🔶
+      {% else %}🚨
+      {% endif %}
+    </span>
+    <div>
+      <strong
+        {% if rc == 'healthy' %}style="color:#16a34a"
+        {% elif rc == 'watch' %}style="color:#ca8a04"
+        {% elif rc == 'danger' %}style="color:#ea580c"
+        {% else %}style="color:#dc2626"
+        {% endif %}
+      >{{ attestation.risk_label }}</strong>
+      <span style="margin-left:8px;font-size:0.75rem;color:var(--muted,#888)">
+        {{ "Midnight Testnet" if attestation.mode == "midnight" else "Local Demo" }}
+      </span>
+      <br>
+      <span style="font-size:0.75rem;color:var(--muted,#888)">
+        Overcollateralized:
+        {% if attestation.is_overcollateralized %}
+          <strong style="color:#16a34a">Yes</strong>
+        {% else %}
+          <strong style="color:#dc2626">No</strong>
+        {% endif %}
+      </span>
+    </div>
+    <div style="margin-left:auto">
+      <a href="{{ url_for('midnight.index') }}" style="font-size:0.8rem;color:var(--muted,#888)">
+        View proof →
+      </a>
+    </div>
+  </div>
+  <div style="margin-top:8px">
+    <p style="font-size:0.7rem;color:var(--muted,#888);margin:0;word-break:break-all">
+      Proof: <code style="font-size:0.7rem">{{ attestation.proof_hash[:32] }}…</code>
+    </p>
+    <p style="font-size:0.7rem;color:var(--muted,#888);margin:2px 0 0">
+      Amounts are hidden by zero-knowledge proof. Only risk class is public.
+    </p>
+  </div>
+{% else %}
+  <div class="empty-state">
+    <p class="muted">Connect a wallet to generate a privacy attestation.</p>
+  </div>
+{% endif %}

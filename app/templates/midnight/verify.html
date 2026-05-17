@@ -1,0 +1,64 @@
+{% extends "base.html" %}
+
+{% block title %}Verify Position · CryptoBase{% endblock %}
+
+{% block content %}
+<section class="page-header">
+  <div>
+    <p class="eyebrow">Public zero-knowledge verifier</p>
+    <h1>Position Verifier</h1>
+  </div>
+  <span class="status-pill">
+    {{ "Midnight Testnet" if attestation.mode == "midnight" else "Local Demo" }}
+  </span>
+</section>
+
+<section class="panel">
+  <p style="color:var(--muted,#888);font-size:0.875rem;line-height:1.6;margin:0 0 16px">
+    This page shows the <strong>public attestation</strong> for the wallet below.
+    Actual collateral and debt amounts are hidden — only the mathematical proof is recorded.
+  </p>
+
+  <div style="margin-bottom:16px">
+    <p style="font-size:0.8rem;color:var(--muted,#888);margin:0 0 4px">Wallet</p>
+    <code style="word-break:break-all;font-size:0.8rem">{{ wallet }}</code>
+  </div>
+
+  <div class="position-table" style="margin-bottom:16px">
+    <div>
+      <span>Overcollateralized</span>
+      {% if attestation.is_overcollateralized %}
+        <strong style="color:#16a34a">Yes</strong>
+      {% else %}
+        <strong style="color:#dc2626">No</strong>
+      {% endif %}
+    </div>
+    <div>
+      <span>Risk class</span>
+      <strong
+        {% if attestation.risk_class == 'healthy' %}style="color:#16a34a"
+        {% elif attestation.risk_class == 'watch' %}style="color:#ca8a04"
+        {% elif attestation.risk_class == 'danger' %}style="color:#ea580c"
+        {% else %}style="color:#dc2626"
+        {% endif %}
+      >{{ attestation.risk_label }}</strong>
+    </div>
+    <div>
+      <span>Source</span>
+      <strong>{{ "Midnight Testnet" if attestation.mode == "midnight" else "Local Demo" }}</strong>
+    </div>
+  </div>
+
+  <div style="margin-bottom:12px">
+    <p style="font-size:0.8rem;color:var(--muted,#888);margin:0 0 4px">ZK proof hash</p>
+    <code style="display:block;word-break:break-all;font-size:0.75rem;padding:8px;background:var(--surface,#1a1a2e);border-radius:4px">
+      {{ attestation.proof_hash }}
+    </code>
+  </div>
+
+  <div class="alert alert-warning" style="margin-top:16px">
+    Actual collateral and debt amounts are hidden by the Midnight privacy layer.
+    Only the overcollateralization result and risk class are public.
+  </div>
+</section>
+{% endblock %}

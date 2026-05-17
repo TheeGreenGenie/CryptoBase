@@ -12,33 +12,49 @@
     <div class="position-table">
       {% for col in position.collateral_positions %}
       <div>
-        <span>Collateral ({{ col.symbol }})</span>
-        <strong>{{ col.amount }} {{ col.symbol }} <span class="muted">(~${{ position.collateral_usd }})</span></strong>
+        <span>Collateral asset</span>
+        <strong>
+          {{ col.symbol }}
+          <span class="muted" data-reveal="collateral_token_{{ col.symbol }}">(amount shielded)</span>
+        </strong>
       </div>
       {% endfor %}
 
       {% if has_debt %}
       <div>
-        <span>Debt ({{ position.debt_symbol }})</span>
-        <strong>{{ position.debt_tokens }} {{ position.debt_symbol }} <span class="muted">(~${{ position.debt_usd }})</span></strong>
+        <span>Debt asset</span>
+        <strong>
+          {{ position.debt_symbol }}
+          <span class="muted" data-reveal="debt_tokens">(amount shielded)</span>
+        </strong>
       </div>
       {% endif %}
 
       {% if has_collateral or has_debt %}
       <div>
-        <span>Health factor</span>
+        <span>Risk class</span>
         {% set hf_raw = position.health_factor_raw | int %}
         {% if hf_raw == 0 or not has_debt %}
-          <strong style="color: hsl(120, 78%, 38%)">100%</strong>
+          <strong style="color:#16a34a">Healthy</strong>
         {% else %}
           {% set hf = hf_raw / 1e18 %}
-          {% set pct = ([[(hf - 1.0) / 0.6 * 100, 0] | max, 100] | min) | round | int %}
-          {% set hue = (pct * 120 / 100) | round | int %}
-          <strong style="color: hsl({{ hue }}, 78%, 38%)">{{ pct }}%</strong>
+          {% if hf >= 1.6 %}
+            <strong style="color:#16a34a">Healthy</strong>
+          {% elif hf >= 1.3 %}
+            <strong style="color:#ca8a04">Watch</strong>
+          {% elif hf >= 1.1 %}
+            <strong style="color:#ea580c">Danger</strong>
+          {% else %}
+            <strong style="color:#dc2626">Liquidatable</strong>
+          {% endif %}
         {% endif %}
       </div>
       {% endif %}
     </div>
+    <p style="font-size:0.75rem;color:var(--muted,#888);margin:10px 0 0">
+      Position amounts are hidden by the Midnight zero-knowledge privacy layer.
+      <a href="{{ url_for('midnight.index') }}" style="color:inherit">View your ZK proof →</a>
+    </p>
   {% endif %}
 {% else %}
   <div class="empty-state">

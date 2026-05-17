@@ -19,6 +19,7 @@
         <a href="{{ url_for('lending.index') }}">Lending</a>
         <a href="{{ url_for('trading.index') }}">Trading</a>
         <a href="{{ url_for('agent.index') }}">Agent</a>
+        <a href="{{ url_for('midnight.index') }}">Privacy</a>
         <a href="/api/v1/health" target="_blank" rel="noopener">API</a>
       </nav>
       {% if session.get('wallet_address') %}
@@ -55,6 +56,39 @@
         bar.style.width = "100%";
         setTimeout(() => { bar.style.width = "0"; }, 300);
       });
+
+      // Reveal shielded amounts for 5 seconds (owner-only)
+      function revealAmounts() {
+        fetch('/privacy/my-amounts-json')
+          .then(r => r.json())
+          .then(data => {
+            if (!data.ok) { showAlert('Could not load amounts.', 'error'); return; }
+            const pos = data.data;
+            document.querySelectorAll('[data-reveal]').forEach(el => {
+              const field = el.dataset.reveal;
+              el._shieldedText = el.textContent;
+              if (field === 'collateral_usd') {
+                el.textContent = '$' + pos.collateral_usd;
+              } else if (field === 'debt_usd') {
+                el.textContent = '$' + pos.debt_usd;
+              } else if (field === 'debt_tokens') {
+                el.textContent = (pos.debt_tokens || '0') + ' ' + pos.debt_symbol;
+              } else if (field.startsWith('collateral_token_')) {
+                const sym = field.replace('collateral_token_', '');
+                const found = (pos.collateral_positions || []).find(p => p.symbol === sym);
+                if (found) el.textContent = found.amount + ' ' + found.symbol;
+              }
+              el.classList.remove('muted');
+            });
+            setTimeout(() => {
+              document.querySelectorAll('[data-reveal]').forEach(el => {
+                el.textContent = el._shieldedText || 'Shielded';
+                el.classList.add('muted');
+              });
+            }, 5000);
+          })
+          .catch(() => showAlert('Could not load amounts.', 'error'));
+      }
 
       // Helper: show inline alert
       function showAlert(message, type = "error") {

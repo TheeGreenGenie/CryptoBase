@@ -81,6 +81,10 @@ class Config:
 
     LOG_LEVEL = os.getenv("LOG_LEVEL", "INFO")
 
+    # Midnight Privacy Layer
+    MIDNIGHT_RPC_URL = os.getenv("MIDNIGHT_RPC_URL", "")
+    MIDNIGHT_CONTRACT_ADDRESS = os.getenv("MIDNIGHT_CONTRACT_ADDRESS", "")
+
 
 class DevelopmentConfig(Config):
     DEBUG = True

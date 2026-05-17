@@ -1,19 +1,22 @@
 <article class="metric">
   <span>Collateral</span>
-  <strong>${{ collateral_usd }}</strong>
+  <strong class="muted" data-reveal="collateral_usd">Shielded</strong>
 </article>
 <article class="metric">
   <span>Debt</span>
-  <strong>${{ debt_usd }}</strong>
+  <strong class="muted" data-reveal="debt_usd">Shielded</strong>
 </article>
 <article class="metric">
-  <span>Health factor</span>
-  {% if health_factor == '--' %}
-    <strong class="muted">--</strong>
+  <span>Risk class</span>
+  {% if risk_class == 'healthy' %}
+    <strong style="color:hsl(120,78%,38%)">Healthy</strong>
+  {% elif risk_class == 'watch' %}
+    <strong style="color:hsl(45,78%,38%)">Watch</strong>
+  {% elif risk_class == 'danger' %}
+    <strong style="color:hsl(20,78%,38%)">Danger</strong>
+  {% elif risk_class == 'liquidatable' %}
+    <strong style="color:hsl(0,78%,38%)">Liquidatable</strong>
   {% else %}
-    {% set hf = health_factor | float %}
-    {% set pct = ([[(hf - 1.0) / 0.6 * 100, 0] | max, 100] | min) | round | int %}
-    {% set hue = (pct * 120 / 100) | round | int %}
-    <strong style="color: hsl({{ hue }}, 78%, 38%)">{{ pct }}%</strong>
+    <strong class="muted">--</strong>
   {% endif %}
 </article>

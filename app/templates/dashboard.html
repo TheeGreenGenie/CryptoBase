@@ -12,6 +12,11 @@
     <span class="spinner htmx-indicator" id="dash-spinner"></span>
     Local · Anvil
   </span>
+  {% if session.get('wallet_address') %}
+  <button class="primary-button" onclick="revealAmounts()" style="font-size:0.8rem;padding:6px 14px" title="Amounts auto-hide after 5 seconds">
+    Reveal my amounts (5s)
+  </button>
+  {% endif %}
 </section>
 
 <section
@@ -54,6 +59,21 @@
     hx-indicator="#dash-spinner"
   >
     {% include "lending/_position_table.html" %}
+  </div>
+</section>
+
+<section class="panel" style="margin-top: 16px;">
+  <h2>
+    Privacy Shield · Midnight
+    <span class="spinner htmx-indicator" style="margin-left:8px"></span>
+  </h2>
+  <div
+    hx-get="{{ url_for('midnight.shield_partial') }}"
+    hx-trigger="load, every 30s"
+    hx-swap="innerHTML"
+    hx-indicator="#dash-spinner"
+  >
+    {% include "partials/_midnight_shield.html" %}
   </div>
 </section>
 {% endblock %}
